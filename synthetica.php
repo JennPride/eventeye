@@ -1,0 +1,813 @@
+<!doctype html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js" lang="en-US">
+<!--<![endif]-->
+
+<head>
+    
+     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+      <link rel="shortcut icon" href="../favicon.ico">
+      <script src="modernizr.custom.js"></script>
+    <title>Event Eye</title>
+      <link rel="stylesheet" href="css/normalize.min.css">
+	<link rel="stylesheet" href="css/animate.min.css">
+	<link rel="stylesheet" href="css/flickity.min.css">
+	<link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap.css" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="justified-nav.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="../../assets/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]--> 
+   <?php
+// setting timezone 
+error_reporting(E_ALL ^ E_DEPRECATED);
+date_default_timezone_set('America/New_York');
+
+$host = "bmgt407.rhsmith.umd.edu";
+$user = "bmgt407_17";
+$password = "bmgt407_17";
+$dbname = "bmgt407_17_db";
+$port = "22";
+
+// Create connection
+$conn = mysql_connect($host, $user, $password, $dbname);
+// Check connection
+if (!$conn) {
+    echo "Unable to connect to DB: " . mysql_error();
+    exit;
+} 
+      
+if (!mysql_select_db($dbname)) {
+    echo "Unable to select mydbname: " . mysql_error();
+    exit;
+}
+
+$date = date('Y-m-d');
+ 
+      
+$sql = "SELECT eventName, locationName, room, eventCategory, eventCost, startTime, endTime, eventDescription, eventLink, sponsor FROM Events WHERE eventDate = '" . $date . "'  ORDER BY startTime ASC";
+$eventNames = array();
+$result = mysql_query($sql);
+if (!$result) {
+    echo "Could not successfully run query ($sql) from DB: " . mysql_error();
+    exit;
+}
+$noEvents = 0;
+if (mysql_num_rows($result) == 0) {
+    $noEvents += 1;
+}
+$index = 0;
+while ($row = mysql_fetch_assoc($result)) {
+    $eventNames[$index] = $row["eventName"];
+    $locationName[$index] = $row["locationName"];
+    $room[$index] = $row["room"];
+    $eventCategory[$index] = $row["eventCategory"];
+    $eventCost[$index] = $row["eventCost"];
+    $startTime[$index] = $row["startTime"];
+    $endTime[$index] = $row["endTime"];
+    $eventDescription[$index] = $row["eventDescription"];
+    $eventLink[$index] = $row["eventLink"];
+    $index++;
+}
+
+$today = date('Y-m-d');
+      
+$length = count($eventNames);
+      
+$mapsql = "SELECT Events.eventName, Events.locationName, Events.eventCost, Events.startTime, Events.endTime, location_coordinates.coordinates
+FROM Events
+INNER JOIN location_coordinates
+ON Events.locationName=location_coordinates.locationName
+WHERE eventDate = '" . $date . "'  ORDER BY startTime ASC";
+
+$mapResult = mysql_query($mapsql);
+if (!$mapResult) {
+    echo "Could not successfully run query ($mapsql) from DB: " . mysql_error();
+    exit;
+}
+
+$coordinates = array();
+      
+if (mysql_num_rows($mapResult) == 0) {
+    $noEvents = true;
+}
+$index = 0;
+while ($row = mysql_fetch_assoc($mapResult)) {
+    $mapEventNames[$index] = $row["eventName"];
+    $mapLocationName[$index] = $row["locationName"];
+    $mapEventCost[$index] = $row["eventCost"];
+    $mapStartTime[$index] = $row["startTime"];
+    $mapEndTime[$index] = $row["endTime"];
+    $coordinates[$index] = $row["coordinates"];
+    $index++;
+}
+
+$coordsLength = count($coordinates);
+?>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- favicon generated by http://realfavicongenerator.net/ -->
+	<!-- end favicon links -->
+	<link rel="stylesheet" href="css/bootstrap.min.css" />
+	<link rel="stylesheet" href="css/normalize.min.css">
+	<link rel="stylesheet" href="css/animate.min.css">
+	<link rel="stylesheet" href="css/flickity.min.css">
+	<link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+
+    
+    
+</head>
+
+<body>
+	<!--[if lt IE 8]>
+	<p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+	<![endif]-->
+	<!-- Advertisement submissions --> 
+    <header role="banner">
+        <img id="advertisement" src="getImage.php" alt="Testing" > 
+        </br>
+      </header>
+    
+    <div class="container-fluid">
+		<div class="row">
+			<div class="header-nav-wrapper">
+				<div class="logo">
+					<a href="/index.html"><h2>Select a Day</h2></a>
+				</div>
+				<div class="primary-nav-wrapper">
+					<nav>
+						<ul class="primary-nav">
+	            <li><a href="#">Today</a></li>
+            <li><a href="index2.php">Tomorrow</a></li>
+            <li><a href="index3.php"><span id="day 3"></span></a></li>
+            <li ><a href="index4.php"><span id="day 4"></span></a></li>
+            <li><a href="index5.php"><span id="day 5"></span></a></li>
+            <li ><a href="index6.php"><span id="day 6"></span></a></li>
+            <li ><a href="index7.php"><span id="day 7"></span></a></li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</div>
+	</div>
+	<header class="hero">
+		<div class="carousel js-flickity">
+			<div class="carousel-cell" style="background-image: url(img/hero-bg-01.jpg);">
+				<div class="hero-bg">
+					<div class="container">
+						<div class="row">
+							<div class="col-md-12 text-center">
+								<h1 class="wp1">Event Eye</h1>
+                                <h2 class="wp1">Discover what's near you in seconds</h2>
+							</div>
+						</div>
+						<div class="row">
+						</div>
+					</div>
+				</div>
+			</div>
+	</header>
+	<!-- SECTION: Intro -->
+        <ul id="eventDisplay">
+        <li>
+                <div id="map"> 
+                </div>
+        </li>
+        <li>
+                  <div class="page-header">
+    <h1 id="pageDate"></h1>
+  </div>   
+	<section class="collective has-padding" id="intro">
+		<div class="container">
+			
+            
+            
+            
+            <div class="row">
+				<div class="col-md-3">
+					<h4>The collective</h4>
+				</div>
+				<div class="col-md-9">
+					<p>8-bit aesthetic kitsch 90's humblebrag. Gastropub tacos hoodie letterpress, banjo normcore trust fund hella. Kinfolk gluten-free lo-fi quinoa. Pabst kitsch ennui hoodie meggings banjo. Schlitz tacos kitsch godard before they sold out. Kale chips chillwave kickstarter photo booth cronut cold-pressed. Banjo fixie umami kombucha affogato gluten-free authentic slow-carb hashtag, hammock pour-over chambray viral VHS normcore.</p>
+					<div class="video-player">
+						<video id="video_synth" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" width="568" height="300" poster="img/video-cover.jpg" data-setup='{}'>
+							<source src="http://vjs.zencdn.net/v/oceans.mp4" type="video/mp4" />
+							<source src="http://vjs.zencdn.net/v/oceans.webm" type="video/webm" />
+							<source src="http://vjs.zencdn.net/v/oceans.ogv" type="video/ogg" />
+							<p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="http://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
+						</video>
+					</div>
+					<p>8-bit aesthetic kitsch 90's humblebrag. Gastropub tacos hoodie letterpress, banjo normcore trust fund hella. Kinfolk gluten-free lo-fi quinoa. </p>
+					<p>Pabst kitsch ennui hoodie meggings banjo. Schlitz tacos kitsch godard before they sold out. Kale chips chillwave kickstarter photo booth cronut cold-pressed. Banjo fixie umami kombucha affogato gluten-free authentic slow-carb hashtag, hammock pour-over chambray viral VHS normcore.</p>
+				</div>
+			</div>
+		</div>
+	</section>
+	<!-- END SECTION: Intro -->
+	<!-- SECTION: Crew -->
+	<section class="crew has-padding alternate-bg" id="team">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12">
+					<h4>The Crew</h4>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<article class="crew-member" style="background-image: url(img/crew-peter-finlan.jpg)">
+						<figure>
+							<figcaption class="overlay">
+								<h2>Peter Finlan</h2>
+								<p>8-bit aesthetic kitsch 90's humblebrag. Gastropub tacos hoodie letterpress.</p>
+								<div class="crew-socials">
+									<ul>
+										<li><a href="http://www.twitter.com/peterfinlan/"><i class="fa fa-twitter"></i></a>
+										</li>
+										<li><a href="http://www.linkedin.com/in/peterfinlan/"><i class="fa fa-linkedin"></i></a>
+										</li>
+									</ul>
+								</div>
+							</figcaption>
+						</figure>
+					</article>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<article class="crew-member" style="background-image: url(img/crew-blaz-robar.jpg)">
+						<figure>
+							<figcaption class="overlay">
+								<h2>Blaz Robar</h2>
+								<p>8-bit aesthetic kitsch 90's humblebrag. Gastropub tacos hoodie letterpress.</p>
+								<div class="crew-socials">
+									<ul>
+										<li><a href="#"><i class="fa fa-twitter"></i></a>
+										</li>
+										<li><a href="#"><i class="fa fa-linkedin"></i></a>
+										</li>
+									</ul>
+								</div>
+							</figcaption>
+						</figure>
+					</article>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<article class="crew-member" style="background-image: url(img/crew-mary-lou.jpg)">
+						<figure>
+							<figcaption class="overlay">
+								<h2>Mary Lou</h2>
+								<p>8-bit aesthetic kitsch 90's humblebrag. Gastropub tacos hoodie letterpress.</p>
+								<div class="crew-socials">
+									<ul>
+										<li><a href="#"><i class="fa fa-twitter"></i></a>
+										</li>
+										<li><a href="#"><i class="fa fa-linkedin"></i></a>
+										</li>
+									</ul>
+								</div>
+							</figcaption>
+						</figure>
+					</article>
+				</div>
+				<div class="col-md-3 col-sm-6 col-xs-12">
+					<article class="crew-member" style="background-image: url('img/crew-dude.jpg')">
+						<figure>
+							<figcaption class="overlay">
+								<h2>Kobe West</h2>
+								<p>8-bit aesthetic kitsch 90's humblebrag. Gastropub tacos hoodie letterpress.</p>
+								<div class="crew-socials">
+									<ul>
+										<li><a href="#"><i class="fa fa-twitter"></i></a>
+										</li>
+										<li><a href="#"><i class="fa fa-linkedin"></i></a>
+										</li>
+									</ul>
+								</div>
+							</figcaption>
+						</figure>
+					</article>
+				</div>
+			</div>
+			<div class="row skillset">
+				<div class="col-md-6">
+					<div class="bar-chart-wrapper">
+						<h5 class="bar-chart-text">Experience Design <span class="push-right">90%</span></h5>
+						<div class="bar-wrapper">
+							<div class="bar" data-percentage="90%">
+								<span></span>
+							</div>
+						</div>
+					</div>
+					<div class="bar-chart-wrapper">
+						<h5 class="bar-chart-text">HTML5/CSS3 <span class="push-right">95%</span></h5>
+						<div class="bar-wrapper">
+							<div class="bar" data-percentage="95%">
+								<span></span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="bar-chart-wrapper">
+						<h5 class="bar-chart-text">Interactive Prototyping <span class="push-right">80%</span></h5>
+						<div class="bar-wrapper">
+							<div class="bar" data-percentage="80%">
+								<span></span>
+							</div>
+						</div>
+					</div>
+					<div class="bar-chart-wrapper">
+						<h5 class="bar-chart-text">Visual Design <span class="push-right">90%</span></h5>
+						<div class="bar-wrapper">
+							<div class="bar" data-percentage="90%">
+								<span></span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+	<!-- END SECTION: Crew -->
+	<!-- SECTION: Stats -->
+	<div class="stats has-padding-tall">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-4 col-sm-4 stats-container">
+					<i class="icon icon-Cup"></i>
+					<div class="stats-wrapper">
+						<p class="stats-number" data-stop="24">24</p>
+						<p class="stats-text">Awards won</p>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-4 stats-container">
+					<i class="icon icon-Book"></i>
+					<div class="stats-wrapper">
+						<p class="stats-number" data-stop="341">341</p>
+						<p class="stats-text">Articles</p>
+					</div>
+				</div>
+				<div class="col-md-4 col-sm-4 stats-container">
+					<i class="icon icon-Pen"></i>
+					<div class="stats-wrapper">
+						<p class="stats-number" data-stop="43">43</p>
+						<p class="stats-text">Freebies</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- END SECTION: Stats -->
+	<!-- SECTION: Articles -->
+	<section class="latest-articles has-padding alternate-bg" id="articles">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-4 col-sm-4">
+					<h4>Latest Articles</h4>
+				</div>
+				<div class="col-md-8 col-sm-8 sort">
+					<h5>Sort by</h5>
+					<select name="article-sort" id="inputArticle-Sort" class="">
+						<option value="">Experience Design</option>
+						<option value="">Visual Design</option>
+						<option value="">UI Patterns</option>
+						<option value="">Product Design</option>
+					</select>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-4">
+					<article class="article-post">
+						<a href="#">
+							<div class="article-image has-overlay" style="background-image: url(img/article-01.jpg)">
+								<span class="featured-tag">Featured</span>
+							</div>
+							<figure>
+								<figcaption>
+									<h2>8 solid tips when working with front-end developers</h2>
+									<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus...</p>
+								</figcaption>
+							</figure>
+						</a>
+						<ul class="article-footer">
+							<li class="article-category">
+								<a href="#">Product</a>
+							</li>
+							<li class="article-comments">
+								<span><i class="fa fa-comments"></i> 51</span>
+							</li>
+						</ul>
+					</article>
+				</div>
+				<div class="col-md-4">
+					<article class="article-post">
+						<a href="#">
+							<div class="article-image has-overlay" style="background-image: url(img/article-02.jpg)">
+							</div>
+							<figure>
+								<figcaption>
+									<h2>The 10 best traits of a awesome design leaders</h2>
+									<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus...</p>
+								</figcaption>
+							</figure>
+						</a>
+						<ul class="article-footer">
+							<li class="article-category">
+								<a href="#">Teams</a>
+							</li>
+							<li class="article-comments">
+								<span><i class="fa fa-comments"></i> 42</span>
+							</li>
+						</ul>
+					</article>
+				</div>
+				<div class="col-md-4">
+					<article class="article-post">
+						<a href="#">
+							<div class="article-image has-overlay" style="background-image: url(img/article-03.jpg)">
+							</div>
+							<figure>
+								<figcaption>
+									<h2>How to design well collaboratively with an agile product team</h2>
+									<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus...</p>
+								</figcaption>
+							</figure>
+						</a>
+						<ul class="article-footer">
+							<li class="article-category">
+								<a href="#">Teams</a>
+							</li>
+							<li class="article-comments">
+								<span><i class="fa fa-comments"></i> 58</span>
+							</li>
+						</ul>
+					</article>
+				</div>
+			</div>
+			<div class="row has-top-margin">
+				<div class="col-md-4">
+					<article class="article-post">
+						<a href="#">
+							<div class="article-image has-overlay" style="background-image: url(img/article-04.jpg)">
+							</div>
+							<figure>
+								<figcaption>
+									<h2>The essentials of modern interaction design (mobile + tablet)</h2>
+									<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus...</p>
+								</figcaption>
+							</figure>
+						</a>
+						<ul class="article-footer">
+							<li class="article-category">
+								<a href="#">UX Design</a>
+							</li>
+							<li class="article-comments">
+								<span><i class="fa fa-comments"></i> 14</span>
+							</li>
+						</ul>
+					</article>
+				</div>
+				<div class="col-md-4">
+					<article class="article-post">
+						<a href="#">
+							<div class="article-image has-overlay" style="background-image: url(img/article-05.jpg)">
+							</div>
+							<figure>
+								<figcaption>
+									<h2>Overcoming barriers encountered in the pitch process (part 1)</h2>
+									<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus...</p>
+								</figcaption>
+							</figure>
+						</a>
+						<ul class="article-footer">
+							<li class="article-category">
+								<a href="#">Product</a>
+							</li>
+							<li class="article-comments">
+								<span><i class="fa fa-comments"></i> 55</span>
+							</li>
+						</ul>
+					</article>
+				</div>
+				<div class="col-md-4">
+					<article class="article-post">
+						<a href="#">
+							<div class="article-image has-overlay" style="background-image: url(img/article-06.jpg)">
+							</div>
+							<figure>
+								<figcaption>
+									<h2>10 things we've learnt about our users (Case Study)</h2>
+									<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus...</p>
+								</figcaption>
+							</figure>
+						</a>
+						<ul class="article-footer">
+							<li class="article-category">
+								<a href="#">UX Design</a>
+							</li>
+							<li class="article-comments">
+								<span><i class="fa fa-comments"></i> 20</span>
+							</li>
+						</ul>
+					</article>
+				</div>
+			</div>
+			<div class="row is-centered">
+				<a href="#intro" class="btn secondary view-more">View more</a>
+			</div>
+		</div>
+	</section>
+	<!-- END SECTION: Articles -->
+	<!-- SECTION: Freebies -->
+	<section class="freebies has-padding" id="freebies">
+		<div class="container freebies-intro">
+			<div class="row">
+				<div class="col-md-12">
+					<h4>Freshest Freebies</h4>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-6 content-left">
+					<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus cursus ut parturient viverra elit aliquam ultrices est sem. Tellus nam ad fermentum ac enim est duis facilisis congue a lacus adipiscing consequat risus consectetur scelerisque integer suspendisse a mus integer elit.</p>
+				</div>
+				<div class="col-md-6 content-right">
+					<p>A posuere donec senectus suspendisse bibendum magna ridiculus a justo orci parturient suspendisse ad rhoncus cursus ut parturient viverra elit aliquam ultrices est sem. Tellus nam ad fermentum ac enim est duis facilisis congue a lacus adipiscing consequat risus consectetur scelerisque integer suspendisse a mus integer elit.</p>
+				</div>
+			</div>
+		</div>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-6 no-padding">
+					<article class="item wp5">
+						<figure class="has-overlay">
+							<figcaption class="overlay">
+								<div class="like-share-wrapper">
+									<ul>
+										<li>
+											<div class="like-button-wrapper">
+												<a href="#" class="like_button"><i class="like-counter fa fa-heart-o"></i></a>
+												<span class="count">0</span>
+											</div>
+										</li>
+									</ul>
+								</div>
+								<div class="freebie-content">
+									<span class="date">03/01/2016</span>
+									<h2>Sedna HTML CSS Template</h2>
+									<div class="group">
+										<a href="http://tympanus.net/codrops/2015/08/11/freebie-sedna-one-page-website-template/" class="btn secondary">Download</a>
+									</div>
+								</div>
+							</figcaption>
+							<img src="img/sedna-freebie.jpg" alt="Sedna Freebie Peter Finlan">
+						</figure>
+					</article>
+				</div>
+				<div class="col-md-6 no-padding">
+					<article class="item wp6">
+						<figure class="has-overlay">
+							<figcaption class="overlay">
+								<div class="like-share-wrapper">
+									<ul>
+										<li>
+											<div class="like-button-wrapper">
+												<a href="#" class="like_button"><i class="like-counter fa fa-heart-o"></i></a>
+												<span class="count">0</span>
+											</div>
+										</li>
+									</ul>
+								</div>
+								<div class="freebie-content">
+									<span class="date">03/01/2016</span>
+									<h2>Land.io Sketch Template</h2>
+									<div class="group">
+										<a href="http://tympanus.net/codrops/2015/09/16/freebie-land-io-ui-kit-landing-page-design-sketch/" class="btn secondary">Download</a>
+									</div>
+								</div>
+							</figcaption>
+							<img src="img/landio-freebie.jpg" alt="Land.io Freebie Peter Finlan">
+						</figure>
+					</article>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-6 no-padding">
+					<article class="item wp7">
+						<figure class="has-overlay">
+							<figcaption class="overlay">
+								<div class="like-share-wrapper">
+									<ul>
+										<li>
+											<div class="like-button-wrapper">
+												<a href="#" class="like_button"><i class="like-counter fa fa-heart-o"></i></a>
+												<span class="count">0</span>
+											</div>
+										</li>
+									</ul>
+								</div>
+								<div class="freebie-content">
+									<span class="date">03/01/2016</span>
+									<h2>Synthetica HTML5/CSS3 Template</h2>
+									<div class="group">
+										<a href="http://tympanus.net/codrops/?p=26570" class="btn secondary">Download</a>
+									</div>
+								</div>
+							</figcaption>
+							<img src="img/freebie-03.jpg" alt="Synthetica Freebie by Peter Finlan">
+						</figure>
+					</article>
+				</div>
+				<div class="col-md-6 no-padding">
+					<article class="item wp8">
+						<figure class="has-overlay">
+							<figcaption class="overlay">
+								<div class="like-share-wrapper">
+									<ul>
+										<li>
+											<div class="like-button-wrapper">
+												<a href="#" class="like_button"><i class="like-counter fa fa-heart-o"></i></a>
+												<span class="count">0</span>
+											</div>
+										</li>
+									</ul>
+								</div>
+								<div class="freebie-content">
+									<span class="date">03/01/2016</span>
+									<h2>Free logo concepts by Koby West</h2>
+									<div class="group">
+										<a href="#" class="btn secondary">Download</a>
+									</div>
+								</div>
+							</figcaption>
+							<img src="img/freebie-04.jpg" alt="Synthetica by Freebie Peter Finlan">
+						</figure>
+					</article>
+				</div>
+				<div class="is-centered">
+					<a href="http://tympanus.net/codrops/author/pfinlan/" class="btn secondary view-more">View more</a>
+				</div>
+			</div>
+		</div>
+	</section>
+	<!-- END SECTION: Freebies -->
+	<!-- SECTION: Get started -->
+	<section class="get-started has-padding text-center" id="get-started">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-12 wp4">
+					<h2>Get started now. Download Synthetica <a href="http://tympanus.net/codrops/?p=26570">FREE</a>, via Codrops.</h2>
+					<a href="http://tympanus.net/codrops/?p=26570" class="btn secondary-white">Get started</a>
+				</div>
+			</div>
+		</div>
+	</section>
+	<!-- END SECTION: Get started -->
+	<!-- SECTION: Footer -->
+	<footer class="has-padding footer-bg">
+		<div class="container">
+			<div class="row">
+				<div class="col-md-4 footer-branding">
+					<img class="footer-branding-logo" src="img/synthetica-logo.png" alt="Synthetica freebie html5 css3 template peter finlan logo">
+					<p>A free HTML5/CSS3 template by <a href="http://www.peterfinlan.com">Peter Finlan</a>, exclusively for <span class="bold-italic">Codrops</span></p>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12 footer-nav">
+					<ul class="footer-primary-nav">
+						<li><a href="#intro">The Collective</a></li>
+						<li><a href="#team">The Crew</a></li>
+						<li><a href="#articles">Articles</a></li>
+						<li><a href="#freebies">Freebies</a></li>
+						<li><a href="#">Subscribe</a></li>
+					</ul>
+					<ul class="footer-share">
+						<li><a href="http://tympanus.net/codrops/licensing/">Licence</a></li>
+						<li><a href="#" class="share-trigger"><i class="fa fa-share"></i>Share</a></li>
+					</ul>
+					<div class="share-dropdown">
+						<ul>
+							<li><a href="#" class="share-twitter"><i class="fa fa-twitter"></i></a></li>
+							<li><a href="#" class="share-facebook"><i class="fa fa-facebook"></i></a></li>
+							<li><a href="#" class="share-linkedin"><i class="fa fa-linkedin"></i></a></li>
+						</ul>
+					</div>
+					<ul class="footer-secondary-nav">
+						<li>© Synthetica 2016. A free HTML5/CSS3 Template by <a href="http://www.peterfinlan.com">Peter Finlan</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</footer>
+	<!-- END SECTION: Footer -->
+	<!-- JS CDNs -->
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js"></script>
+	<script src="http://vjs.zencdn.net/5.4.6/video.min.js"></script>
+	<!-- jQuery local fallback -->
+	<script>
+	window.jQuery || document.write('<script src="js/min/jquery-1.11.2.min.js"><\/script>')
+	</script>
+	<!-- JS Locals -->
+	<script src="js/min/bootstrap.min.js"></script>
+	<script src="js/min/modernizr-2.8.3-respond-1.4.2.min.js"></script>
+	<script src="js/min/retina.min.js"></script>
+	<script src="js/min/jquery.waypoints.min.js"></script>
+	<script src="js/min/flickity.pkgd.min.js"></script>
+	<script src="js/min/scripts-min.js"></script>
+      <script src="https://maps.googleapis.com/maps/api/js"
+         async defer></script>
+    <script>
+
+        // Inititating the Google Map which should be moved to a seperate JS file
+        
+        var polygon_int = 0;
+        var polygons = [];
+        var infoWindow;
+        var map;
+        var eventNames = <?php echo json_encode ($eventNames)?>;
+        var eventStart =<?php echo json_encode ($startTime)?>;
+        var eventEnd = <?php echo json_encode ($endTime)?>;
+        var eventLoc = <?php echo json_encode ($locationName)?>;
+        function initMap() {
+            var mapDiv = document.getElementById('map');
+            map = new google.maps.Map(mapDiv, {
+                center: {lat: 38.98676, lng: -76.942619},
+                zoom: 15
+            });
+        
+        //style from free styles site    
+        <?php 
+        if ($coordsLength != 0)  {
+            foreach($coordinates as $a){ ?>
+                var polygon = new google.maps.Polygon({
+                polygonID : polygon_int,
+                paths: [<?=$a?>],
+                strokeColor: '#000000',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor:'#00EE00',
+                fillOpacity: 0.35
+        });
+        polygon_int++;
+        polygons.push(polygon);
+        polygon.setMap(map);
+        polygon.addListener('click', showDetails);
+        infoWindow = new google.maps.InfoWindow;
+        <?php 
+            } 
+        }?>
+        }
+        function showDetails(event) {   
+            var polygonID = this.polygonID;
+            var contentString = '<b>' + eventNames[polygonID] +'</b> <br>'+ eventLoc[polygonID];
+            infoWindow.setContent(contentString);
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+        }
+      </script>
+	<!-- Google Analytics: change UA-XXXXX-X to be your site's ID and uncomment -->
+	<!--
+	<script>
+	(function(b, o, i, l, e, r) {
+		b.GoogleAnalyticsObject = l;
+		b[l] || (b[l] =
+			function() {
+				(b[l].q = b[l].q || []).push(arguments)
+			});
+		b[l].l = +new Date;
+		e = o.createElement(i);
+		r = o.getElementsByTagName(i)[0];
+		e.src = '//www.google-analytics.com/analytics.js';
+		r.parentNode.insertBefore(e, r)
+	}(window, document, 'script', 'ga'));
+	ga('create', 'UA-XXXXX-X', 'auto');
+	ga('send', 'pageview');
+	</script>
+	-->
+</body>
+
+</html>
